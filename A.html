@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediapipe Pose with Body Parts Images</title>
+    <style>
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="outputCanvas"></canvas>
+
+    <!-- Include Mediapipe Pose and Camera -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <script>
+        const canvas = document.getElementById('outputCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Load images for each body part
+        const headImage = new Image();
+        headImage.src = 'path/to/head-image.png'; // Gambar kepala
+
+        const bodyImage = new Image();
+        bodyImage.src = 'path/to/body-image.png'; // Gambar badan tengah
+
+        const leftUpperArmImage = new Image();
+        leftUpperArmImage.src = 'path/to/left-upper-arm.png'; // Lengan atas kiri
+
+        const rightUpperArmImage = new Image();
+        rightUpperArmImage.src = 'path/to/right-upper-arm.png'; // Lengan atas kanan
+
+        const leftForearmImage = new Image();
+        leftForearmImage.src = 'path/to/left-forearm.png'; // Lengan bawah kiri
+
+        const rightForearmImage = new Image();
+        rightForearmImage.src = 'path/to/right-forearm.png'; // Lengan bawah kanan
+
+        const leftHandImage = new Image();
+        leftHandImage.src = 'path/to/left-hand.png'; // Telapak tangan kiri
+
+        const rightHandImage = new Image();
+        rightHandImage.src = 'path/to/right-hand.png'; // Telapak tangan kanan
+
+        const leftThighImage = new Image();
+        leftThighImage.src = 'path/to/left-thigh.png'; // Paha kiri
+
+        const rightThighImage = new Image();
+        rightThighImage.src = 'path/to/right-thigh.png'; // Paha kanan
+
+        const leftCalfImage = new Image();
+        leftCalfImage.src = 'path/to/left-calf.png'; // Betis kiri
+
+        const rightCalfImage = new Image();
+        rightCalfImage.src = 'path/to/right-calf.png'; // Betis kanan
+
+        const leftFootImage = new Image();
+        leftFootImage.src = 'path/to/left-foot.png'; // Telapak kaki kiri
+
+        const rightFootImage = new Image();
+        rightFootImage.src = 'path/to/right-foot.png'; // Telapak kaki kanan
+
+        // Initialize Mediapipe Pose
+        const pose = new Pose({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+        });
+
+        pose.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            smoothSegmentation: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+        });
+
+        pose.onResults(onPoseResults);
+
+        function onPoseResults(results) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Bersihkan canvas
+
+            if (results.poseLandmarks) {
+                const landmarks = results.poseLandmarks;
+
+                // Draw head image on nose landmark (index 0)
+                drawImageAtPosition(headImage, landmarks[0]);
+
+                // Draw body image on body center landmark (index 11 dan 12 - shoulder midpoint)
+                const centerX = (landmarks[11].x + landmarks[12].x) / 2;
+                const centerY = (landmarks[11].y + landmarks[12].y) / 2;
+                drawImageAtPosition(bodyImage, { x: centerX, y: centerY });
+
+                // Draw left and right upper arm
+                drawImageAtPosition(leftUpperArmImage, landmarks[11]); // Bahu kiri
+                drawImageAtPosition(rightUpperArmImage, landmarks[12]); // Bahu kanan
+
+                // Draw left and right forearm
+                drawImageAtPosition(leftForearmImage, landmarks[13]); // Siku kiri
+                drawImageAtPosition(rightForearmImage, landmarks[14]); // Siku kanan
+
+                // Draw left and right hand
+                drawImageAtPosition(leftHandImage, landmarks[15]); // Pergelangan tangan kiri
+                drawImageAtPosition(rightHandImage, landmarks[16]); // Pergelangan tangan kanan
+
+                // Draw left and right thigh
+                drawImageAtPosition(leftThighImage, landmarks[23]); // Paha kiri
+                drawImageAtPosition(rightThighImage, landmarks[24]); // Paha kanan
+
+                // Draw left and right calf
+                drawImageAtPosition(leftCalfImage, landmarks[25]); // Lutut kiri
+                drawImageAtPosition(rightCalfImage, landmarks[26]); // Lutut kanan
+
+                // Draw left and right foot
+                drawImageAtPosition(leftFootImage, landmarks[27]); // Pergelangan kaki kiri
+                drawImageAtPosition(rightFootImage, landmarks[28]); // Pergelangan kaki kanan
+            }
+        }
+
+        function drawImageAtPosition(image, landmark) {
+            const x = landmark.x * canvas.width;
+            const y = landmark.y * canvas.height;
+            const size = 50; // Ukuran gambar bisa disesuaikan
+            ctx.drawImage(image, x - size / 2, y - size / 2, size, size);
+        }
+
+        // Setup camera stream
+        const videoElement = document.createElement('video');
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await pose.send({ image: videoElement });
+            },
+            width: 640,
+            height: 480,
+        });
+        camera.start();
+    </script>
+</body>
+</html>
